@@ -36,7 +36,7 @@ This section deals with analysing and drawing insights out of the data to answer
 <br />
 
 ### Section 4 - Data preprocessing for the model
-This section deals with processing the data for the model and creating a dataset that we can use to train the model which predicts if a show will be above or below the mean rating
+This section deals with processing the data for the model and creating a dataset that we can use to train the model which predicts if a show will be above or below the mean rating.
  - Create a function which will remove bad characters from a word
  - Create a function which takes in a dataframe containing the data and outputs a block of text for the model, and the labels for that text
  - Encode the text into numerical form to be processed by the model
@@ -46,7 +46,7 @@ This section deals with processing the data for the model and creating a dataset
 <br />
 
 ### Section 5 - Dataset allocation
-This section deals with creating properly sized datasets to be fed through the model
+This section deals with creating properly sized datasets to be fed through the model.
  - Remove the remainder of the dataset that prevents its length from being divisible by 10
  - Create the training dataset out of 80% of the data
  - Create the validation dataset out of 10% of the remaining data
@@ -55,7 +55,7 @@ This section deals with creating properly sized datasets to be fed through the m
 <br />
 
 ### Section 6 - Model building
-This section deals with building the model class and the functions that come along with it
+This section deals with building the model class and the functions that come along with it.
  - Create a bidirectional LSTM network which gets fed into a dense layer with a ReLU, which gets fed into a sigmoid layer which outputs a probability of it being above or below the mean rating
  - Add loading and saving functions for the model
  - Add functions which can provide analytics of how the data performs during training
@@ -70,7 +70,7 @@ This section deals with the training of the model on the data created.
 <br />
 
 ### Section 8 - Model analysis
-This section deals with the analysis of the models performance during training
+This section deals with the analysis of the models performance during training.
  - Evaluate the model on the test dataset and show the loss and accuracy
  - Plot the history of the accuracy and loss for every epoch on the training set during training
  - Plot the history of the accuracy and loss for every epoch on the validation set during training
@@ -78,7 +78,7 @@ This section deals with the analysis of the models performance during training
 <br />
 
 ### Section 9 - Model testing
-This section deals with testing the model on the test data created
+This section deals with testing the model on the test data created.
  - Aanalyse some samples from the test data
  - Create a function which parses custom data to predict if the show will be above or below the mean
 
