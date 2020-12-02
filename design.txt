@@ -10,13 +10,13 @@ Anime stored data:
  - Episode length
  - Rating
  - Description
+ - It's total score # How can I take this into account
+ - It's total ratings # How can I take this into account
 
 User stored data:
  - Username
  - Last 10 animes
- - #### Now what am I going to store for individual statistic tracking, unless I feed it all of this data?
-    - I will run a KNN/KMeans/Cosine over the animes then use this to rank based on similarity
-    - I will then take these base recommendations and perform classification on their descriptions to determine their similarities
 
 Anime recommendation and classification (Based on Youtube algorithm):
- - 
+ - Have a recommendation engine pass over the columns to classify if it would be something worth watching and to filter out the ones with no hope
+ - Have a deep network determine the similarity between the shows just watched using a deep siamese neural network

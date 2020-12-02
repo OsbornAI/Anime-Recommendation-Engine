@@ -150,27 +150,51 @@ class Scraper:
             return 'R+' # We do this because if a show is unlabelled, then only people who can watch any show, being R+ can watch this unclassified rating
 
     # This will parse our episode length column and return the amount of minutes the show lasted for
-    def __parseEpLenCol(self, time_raw):
+    def __parseEpLenCol(self, ep_len_raw):
         try:
-            time_split = time_raw.split(' ')
+            ep_len_split = ep_len_raw.split(' ')
 
             # This will be the condition if it contains a sec
-            if time_split[1] == 'sec.':
+            if ep_len_split[1] == 'sec.':
                 return 1
 
             # This will be our condition if it contains a min
-            elif time_split[1] == 'min.':
-                return int(time_split[0])
+            elif ep_len_split[1] == 'min.':
+                return int(ep_len_split[0])
 
             # These will be the conditions if it contains an hr
-            elif time_split[1] == 'hr.':
+            elif ep_len_split[1] == 'hr.':
 
-                if len(time_split) > 2:
+                if len(ep_len_split) > 2:
 
-                    if time_split[3] == 'min.':
-                        return 60 * int(time_split[0]) + int(time_split[2])
+                    if ep_len_split[3] == 'min.':
+                        return 60 * int(ep_len_split[0]) + int(ep_len_split[2])
 
-                return 60 * int(time_split[0])
+                return 60 * int(ep_len_split[0])
+
+        except:
+            return pd.NaT
+
+    def __binEpLenCol(self, ep_length):
+        try:
+            # Categories: <30 | 30 | 60 | 90 | 120 | >120 | 
+            if ep_length < 30:
+                return '<30'
+
+            elif (ep_length >= 30) and (ep_length < 30 + 15):
+                return '30'
+
+            elif (ep_length >= 30 + 15) and (ep_length < 60 + 15):
+                return '60'
+
+            elif (ep_length >= 60 + 15) and (ep_length < 90 + 15):
+                return '90'
+            
+            elif (ep_length >= 90 + 15) and (ep_length < 120 + 15):
+                return '120'
+
+            elif (ep_length >= 120 + 15):
+                return '>120'
 
         except:
             return pd.NaT
@@ -182,6 +206,58 @@ class Scraper:
         except:
             return pd.NaT
 
+    def __binEpCountCol(self, count):
+        try:
+            # <30 | 30 | 60 | 90 | 120 | 150 | 180 | 210 | >210
+            if count < 30:
+                return '<30'
+
+            elif (count >= 30) and (count < 30 + 15):
+                return '30'
+            
+            elif (count >= 30 + 15) and (count < 60 + 15):
+                return '60'
+
+            elif (count >= 60 + 15) and (count < 90 + 15):
+                return '90'
+
+            elif (count >= 90 + 15) and (count < 120 + 15):
+               return '120' 
+
+            elif (count >= 120 + 15) and (count < 150 + 15):
+                return '150'
+
+            elif (count >= 150 + 15) and (count < 180 + 15):
+                return '180'
+
+            elif (count >= 180 + 15) and (count < 210 + 15):
+                return '210'
+
+            elif count >= 210 + 15:
+                return '>210'
+
+        except:
+            return pd.NaT
+
+    def __scoreColParse(self, score_and_scorers):
+        try:
+            score = float(score_and_scorers.split(', ')[0])
+
+            return score
+
+        except:
+            return pd.NaT
+
+    def __scorersColParse(self, score_and_scorers):
+        try:
+            scorers = int(score_and_scorers.split(', ')[1])
+
+            return scorers
+
+        except:
+            return pd.NaT
+
+    # This is going to want to be updated at some point in time - how are we going to do this update?
     def compileDF(self):
         dfs = []
         for csv in os.listdir(self.csv_dir):
@@ -189,13 +265,20 @@ class Scraper:
 
         self.df = pd.concat(dfs)
 
-        kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description']
+        kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 
+                        'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers']
         self.df = self.df[kept_columns]
 
-        # Data manipulating and cleaning
-        self.df['episode_length'] = self.df['episode_length'].apply(self.__parseEpLenCol)
-        self.df['episodes'] = self.df['episodes'].apply(self.__parseEpisodesCol)
+        # I am probably going to want to make a score column and a rating column as well for the show
 
-        # Still potentially might need a way to parse the rating and the show_type columns - might use k-means-clustering to classify the ratings and show types 
+        self.df['episode_length'] = self.df['episode_length'].apply(self.__parseEpLenCol)
+        self.df['episode_length_bins'] = self.df['episode_length'].apply(self.__binEpLenCol)
+
+        self.df['episodes'] = self.df['episodes'].apply(self.__parseEpisodesCol)
+        self.df['episodes_bins'] = self.df['episodes'].apply(self.__binEpCountCol)
+
+        self.df['score'] = self.df['score_and_scorers'].apply(self.__scoreColParse)
+        self.df['scorers'] = self.df['score_and_scorers'].apply(self.__scorersColParse)
+        self.df = self.df.drop('score_and_scorers', axis=1)
 
         return self.df
