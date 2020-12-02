@@ -5,17 +5,16 @@ from csv import DictWriter
 import time
 import pandas as pd
 from datetime import datetime as dt
-import sqlite3
 
 class Scraper:
-    def __init__(self, sql_db_dir=None, csv_dir=None):
+    def __init__(self, csv_dir):
         self.field_names = ['name_english', 'name_japanese', 'show_type', 'episodes', 'status', 'aired', 'broadcast_time', 'producers', 
                        'licensors', 'studios', 'source', 'genres', 'episode_length', 'rating', 'score_and_scorers', 
                        'members', 'favorites', 'description']
 
-        self.sql_db_dir = sql_db_dir
         self.csv_dir = csv_dir
         self.date = dt.today().strftime(r'%d-%m-%Y')
+        self.df = None
 
     def __parseList(self, element):
         ret_list = [a.text for a in element.find_all('a')]
@@ -146,13 +145,57 @@ class Scraper:
         
         print("Dataset creation completed successfully.")
 
-    def compileSQL(self):
+    def __parseRatingCol(self, rating):
+        if rating == 'None':
+            return 'R+' # We do this because if a show is unlabelled, then only people who can watch any show, being R+ can watch this unclassified rating
+
+    # This will parse our episode length column and return the amount of minutes the show lasted for
+    def __parseEpLenCol(self, time_raw):
+        try:
+            time_split = time_raw.split(' ')
+
+            # This will be the condition if it contains a sec
+            if time_split[1] == 'sec.':
+                return 1
+
+            # This will be our condition if it contains a min
+            elif time_split[1] == 'min.':
+                return int(time_split[0])
+
+            # These will be the conditions if it contains an hr
+            elif time_split[1] == 'hr.':
+
+                if len(time_split) > 2:
+
+                    if time_split[3] == 'min.':
+                        return 60 * int(time_split[0]) + int(time_split[2])
+
+                return 60 * int(time_split[0])
+
+        except:
+            return pd.NaT
+
+    def __parseEpisodesCol(self, episodes):
+        try:
+            return int(episodes)
+        
+        except:
+            return pd.NaT
+
+    def compileDF(self):
         dfs = []
         for csv in os.listdir(self.csv_dir):
             dfs.append(pd.read_csv(os.path.join(self.csv_dir, csv)))
 
-        df = pd.concat(dfs)
+        self.df = pd.concat(dfs)
 
-        db = sqlite3.connect(os.path.join(self.sql_db_dir, f"scraped-anime-db-{self.date}.db"))
+        kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description']
+        self.df = self.df[kept_columns]
 
-        df.to_sql(f"animes-{self.date}", db)
+        # Data manipulating and cleaning
+        self.df['episode_length'] = self.df['episode_length'].apply(self.__parseEpLenCol)
+        self.df['episodes'] = self.df['episodes'].apply(self.__parseEpisodesCol)
+
+        # Still potentially might need a way to parse the rating and the show_type columns - might use k-means-clustering to classify the ratings and show types 
+
+        return self.df
