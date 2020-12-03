@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import backend.data.user_data.users
 
 app = Flask(__name__)
 
@@ -6,6 +7,8 @@ app = Flask(__name__)
 def register():
     username = request.form['username']
     password_raw = request.form['password']
+
+
 
     return jsonify(username=username, password=password_raw)
 
