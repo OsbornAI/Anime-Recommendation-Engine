@@ -5,16 +5,17 @@ from csv import DictWriter
 import time
 import pandas as pd
 from datetime import datetime as dt
+import hashlib
 
 class Scraper:
     def __init__(self, csv_dir):
-        self.field_names = ['name_english', 'name_japanese', 'show_type', 'episodes', 'status', 'aired', 'broadcast_time', 'producers', 
+        self.__field_names = ['name_english', 'name_japanese', 'show_type', 'episodes', 'status', 'aired', 'broadcast_time', 'producers', 
                        'licensors', 'studios', 'source', 'genres', 'episode_length', 'rating', 'score_and_scorers', 
                        'members', 'favorites', 'description']
 
-        self.csv_dir = csv_dir
-        self.date = dt.today().strftime(r'%d-%m-%Y')
-        self.df = None
+        self.__csv_dir = csv_dir
+        self.__date = dt.today().strftime(r'%d-%m-%Y')
+        self.__df = None
 
     def __parseList(self, element):
         ret_list = [a.text for a in element.find_all('a')]
@@ -35,7 +36,7 @@ class Scraper:
         return joined
 
     def __createRow(self, url):
-        ret_dict = {field_name: '' for field_name in self.field_names}
+        ret_dict = {field_name: '' for field_name in self.__field_names}
 
         req = requests.get(url)
         soup = BeautifulSoup(req.content, 'html.parser')
@@ -117,11 +118,11 @@ class Scraper:
             
             print(f"Scraping page {i}...")
 
-            csv_filename = f"anime-{self.date}-{i}.csv"
-            csv_path = os.path.join(self.csv_dir, csv_filename)
+            csv_filename = f"anime-{self.__date}-{i}.csv"
+            csv_path = os.path.join(self.__csv_dir, csv_filename)
 
             with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = DictWriter(csvfile, fieldnames=self.field_names)
+                writer = DictWriter(csvfile, fieldnames=self.__field_names)
                 
                 writer.writeheader()
 
@@ -260,8 +261,8 @@ class Scraper:
     # This is going to want to be updated at some point in time - how are we going to do this update?
     def compileDF(self):
         dfs = []
-        for csv in os.listdir(self.csv_dir):
-            dfs.append(pd.read_csv(os.path.join(self.csv_dir, csv)))
+        for csv in os.listdir(self.__csv_dir):
+            dfs.append(pd.read_csv(os.path.join(self.__csv_dir, csv)))
 
         self.df = pd.concat(dfs)
 
@@ -270,6 +271,8 @@ class Scraper:
         self.df = self.df[kept_columns]
 
         # I am probably going to want to make a score column and a rating column as well for the show
+        self.df['show_id'] = self.df['name_japanese'].astype(str) + '+' + self.df['name_english'].astype(str)
+        self.df['show_id'] = self.df['show_id'].apply(lambda x: hashlib.md5(x.encode()).hexdigest())
 
         self.df['episode_length'] = self.df['episode_length'].apply(self.__parseEpLenCol)
         self.df['episode_length_bins'] = self.df['episode_length'].apply(self.__binEpLenCol)
@@ -285,5 +288,10 @@ class Scraper:
         self.df['std'] = (self.df['score_percentage'] * (-1 * self.df['score_percentage'] + 1) / self.df['scorers']) ** 0.5
         self.df['weighted_score'] = self.df['score_percentage'] - 2 * self.df['std']
         self.df = self.df.drop(['score_percentage', 'std'], axis=1)
+
+        rearranged_cols = ['show_id', 'name_japanese', 'name_english', 'show_type', 'rating', 'licensors', 'producers', 
+                           'studios', 'genres', 'episodes', 'episodes_bins', 'episode_length', 'episode_length_bins', 
+                           'score', 'scorers', 'weighted_score', 'description']
+        self.df = self.df[rearranged_cols]
 
         return self.df

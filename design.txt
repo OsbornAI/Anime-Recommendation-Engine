@@ -14,9 +14,13 @@ Anime stored data:
  - It's total ratings # How can I take this into account
 
 User stored data:
- - Username
- - Last 10 animes
+ - Username (Unique)
+ - Password
+ - Their custom list (Where each item in the list is the index of that list)
 
-Anime recommendation and classification (Based on Youtube algorithm):
- - Have a recommendation engine pass over the columns to classify if it would be something worth watching and to filter out the ones with no hope
- - Have a deep network determine the similarity between the shows just watched using a deep siamese neural network
+Anime recommendation and classification:
+ - We get the euclidean distance between the average of the list vector and the new show, we then sort by the distances and select the shows with the shortest distance
+ - We then take these shows and assess the similarities between a sample of the listed show descriptions and the actual show descriptions, then we will determine if it is recommended or not
+ 
+ - The next algorithm will look at listed shows and find users with a threshold amount nof similar shows un their playlist, and then recommend those shows
+ - Have a blacklist to not recommend shows that are already in the list
