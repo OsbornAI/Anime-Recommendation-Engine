@@ -281,4 +281,9 @@ class Scraper:
         self.df['scorers'] = self.df['score_and_scorers'].apply(self.__scorersColParse)
         self.df = self.df.drop('score_and_scorers', axis=1)
 
+        self.df['score_percentage'] = self.df['score'] / 10
+        self.df['std'] = (self.df['score_percentage'] * (-1 * self.df['score_percentage'] + 1) / self.df['scorers']) ** 0.5
+        self.df['weighted_score'] = self.df['score_percentage'] - 2 * self.df['std']
+        self.df = self.df.drop(['score_percentage', 'std'], axis=1)
+
         return self.df
