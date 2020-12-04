@@ -130,6 +130,22 @@ def removeShow():
 
 @app.route('/recommend_shows', methods=['GET'], strict_slashes=False)
 def recommendShows():
+    # So first of all how am I going to train the model for this recommendation system?
+
+    # Content function
+    # Collabortative function
+
+    # Pt1. We have our first content model observe the difference between the average metadata of the list and the metadata of the new show, and if they are close enough return it as true
+    # Pt2. Network
+    #       - Our model classifies shows that we select with a one
+    #       - Shows that are not selected are given a 0.5 as in there are in the middle of being there and not being there, the more it is rated 0.5
+    #            then the more it will fall behind and be trained to not select it
+    #       - We will also have some sort of randomness to our network to recommend completely low rated shows to help the algorithm
+    #       
+    #       Model will store data in an external file and then once it gets enough data it will go through and update the network
+
+    # Would it be better to use neural networks with collaborative filtering too, using siamese neural networks?
+
     pass
 
 if __name__ == '__main__':
