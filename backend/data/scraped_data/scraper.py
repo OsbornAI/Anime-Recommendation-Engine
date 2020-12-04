@@ -6,6 +6,7 @@ import time
 import pandas as pd
 from datetime import datetime as dt
 import hashlib
+import sqlite3
 
 class Scraper:
     def __init__(self, csv_dir):
@@ -15,7 +16,6 @@ class Scraper:
 
         self.__csv_dir = csv_dir
         self.__date = dt.today().strftime(r'%d-%m-%Y')
-        self.__df = None
 
     def __parseList(self, element):
         ret_list = [a.text for a in element.find_all('a')]
@@ -259,39 +259,43 @@ class Scraper:
             return pd.NaT
 
     # This is going to want to be updated at some point in time - how are we going to do this update?
-    def compileDF(self):
+    def compileSQL(self, sql_dir):
         dfs = []
         for csv in os.listdir(self.__csv_dir):
             dfs.append(pd.read_csv(os.path.join(self.__csv_dir, csv)))
 
-        self.df = pd.concat(dfs)
+        df = pd.concat(dfs)
 
         kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 
                         'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers']
-        self.df = self.df[kept_columns]
+        df = df[kept_columns]
 
         # I am probably going to want to make a score column and a rating column as well for the show
-        self.df['show_id'] = self.df['name_japanese'].astype(str) + '+' + self.df['name_english'].astype(str)
-        self.df['show_id'] = self.df['show_id'].apply(lambda x: hashlib.md5(x.encode()).hexdigest())
+        df['anime_id'] = df['name_japanese'].astype(str) + '+' + df['name_english'].astype(str)
+        df['anime_id'] = df['anime_id'].apply(lambda x: hashlib.md5(x.encode()).hexdigest())
 
-        self.df['episode_length'] = self.df['episode_length'].apply(self.__parseEpLenCol)
-        self.df['episode_length_bins'] = self.df['episode_length'].apply(self.__binEpLenCol)
+        df['episode_length'] = df['episode_length'].apply(self.__parseEpLenCol)
+        df['episode_length_bins'] = df['episode_length'].apply(self.__binEpLenCol)
 
-        self.df['episodes'] = self.df['episodes'].apply(self.__parseEpisodesCol)
-        self.df['episodes_bins'] = self.df['episodes'].apply(self.__binEpCountCol)
+        df['episodes'] = df['episodes'].apply(self.__parseEpisodesCol)
+        df['episodes_bins'] = df['episodes'].apply(self.__binEpCountCol)
 
-        self.df['score'] = self.df['score_and_scorers'].apply(self.__scoreColParse)
-        self.df['scorers'] = self.df['score_and_scorers'].apply(self.__scorersColParse)
-        self.df = self.df.drop('score_and_scorers', axis=1)
+        df['score'] = df['score_and_scorers'].apply(self.__scoreColParse)
+        df['scorers'] = df['score_and_scorers'].apply(self.__scorersColParse)
+        df = df.drop('score_and_scorers', axis=1)
 
-        self.df['score_percentage'] = self.df['score'] / 10
-        self.df['std'] = (self.df['score_percentage'] * (-1 * self.df['score_percentage'] + 1) / self.df['scorers']) ** 0.5
-        self.df['weighted_score'] = self.df['score_percentage'] - 2 * self.df['std']
-        self.df = self.df.drop(['score_percentage', 'std'], axis=1)
+        df['score_percentage'] = df['score'] / 10
+        df['std'] = (df['score_percentage'] * (-1 * df['score_percentage'] + 1) / df['scorers']) ** 0.5
+        df['weighted_score'] = df['score_percentage'] - 2 * df['std']
+        df = df.drop(['score_percentage', 'std'], axis=1)
 
-        rearranged_cols = ['show_id', 'name_japanese', 'name_english', 'show_type', 'rating', 'licensors', 'producers', 
+        rearranged_cols = ['anime_id', 'name_japanese', 'name_english', 'show_type', 'rating', 'licensors', 'producers', 
                            'studios', 'genres', 'episodes', 'episodes_bins', 'episode_length', 'episode_length_bins', 
                            'score', 'scorers', 'weighted_score', 'description']
-        self.df = self.df[rearranged_cols]
+        df = df[rearranged_cols]
 
-        return self.df
+        conn = sqlite3.connect(sql_dir)
+        df.to_sql('anime', conn)
+        conn.close()
+
+        return df
