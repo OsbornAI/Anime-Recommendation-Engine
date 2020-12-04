@@ -9,19 +9,20 @@ class Users:
         conn = sqlite3.connect(self.__db_dir)
         cursor = conn.cursor()
 
-        cursor.execute('CREATE TABLE IF NOT EXISTS users(username TEXT, password TEXT, anime_list TEXT)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT, anime_list TEXT, blacklist TEXT)')
         conn.commit()
 
         cursor.close()
         conn.close()
 
-    def insertUser(self, username, password, anime_list):
+    def insertUser(self, username, password, anime_list, blacklist):
         conn = sqlite3.connect(self.__db_dir)
         cursor = conn.cursor()
 
         anime_list = ",".join(anime_list)
+        blacklist = ",".join(blacklist)
 
-        cursor.execute('INSERT INTO users (username, password, anime_list) VALUES (?, ?, ?)', (username, password, anime_list))
+        cursor.execute('INSERT INTO users (username, password, anime_list, blacklist) VALUES (?, ?, ?, ?)', (username, password, anime_list, blacklist))
         conn.commit()
 
         cursor.close()
@@ -36,31 +37,21 @@ class Users:
 
         user_data = list(user_data)
         user_data[2] = user_data[2].split(',')
+        user_data[3] = user_data[3].split(',')
 
         cursor.close()
         conn.close()
 
         return user_data
 
-    def updateUser(self, curr_username, username=False, password=False, anime_list=False):
+    def updateUser(self, curr_username, username, password, anime_list, blacklist):
         conn = sqlite3.connect(self.__db_dir)
         cursor = conn.cursor()
 
-        user_data = self.findUser(curr_username)
+        anime_list = ",".join(anime_list)
+        blacklist = ",".join(blacklist)
 
-        if not username:
-            username = user_data[0]
-
-        if not password:
-            password = user_data[1] # I'll have to check what is being printed out for these ones
-
-        if not anime_list:
-            anime_list = ",".join(user_data[2])
-
-        else:
-            anime_list = ",".join(anime_list)
-
-        cursor.execute('UPDATE users SET username=?, password=?, anime_list=?', (username, password, anime_list))
+        cursor.execute('UPDATE users SET username=?, password=?, anime_list=? WHERE username=?', (username, password, anime_list, blacklist, curr_username))
 
         cursor.close()
         conn.close()
