@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 
 class Anime:
     def __init__(self, db_dir):
@@ -19,6 +20,30 @@ class Anime:
 
             return anime
 
-        except Exception as e:
-            print(e)
+        except:
             return False
+
+    def findAllAnime(self, as_df=True):
+        try:
+            conn = sqlite3.connect(self.__db_dir)
+            cursor = conn.cursor() 
+
+            if not as_df:
+                cursor.execute("SELECT * FROM anime")
+                animes = cursor.fetchall()
+
+                cursor.close()
+                conn.close()
+
+                return animes
+
+            df = pd.read_sql_query("SELECT * FROM anime", conn)
+
+            cursor.close()
+            conn.close()
+
+            return df
+
+        except:
+            return False
+    

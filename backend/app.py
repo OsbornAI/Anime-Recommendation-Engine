@@ -6,6 +6,7 @@ import hashlib
 import jwt
 import datetime
 from recommender.recommender import recommendContent
+from recommender.model.model import Model
 
 app = Flask(__name__)
 app.config['secret_key'] = "s4fQuS10jQD4cGH8bKxHWXBOLp2PYRXOiiTGCuVqgAJmVElxId"
@@ -16,6 +17,8 @@ app.config['users_db'].createTable()
 
 app.config['anime_db_path'] = os.path.join(os.getcwd(), 'backend/data/scraped_data/anime.db') # This will have to be modified depending on where it is run from
 app.config['anime_db'] = Anime(app.config['anime_db_path'])
+
+app.config['model'] = Model(app.config['anime_db'].findAllAnime())
 
 def validateToken(token):
     try:
@@ -162,7 +165,10 @@ def recommendAnime():
 
     # Would it be better to use neural networks with collaborative filtering too, using siamese neural networks?
 
-    anime = recommendContent(app.config['anime_db_path'], user[0], user[2], user[3])
+    anime = recommendContent(app.config['anime_db'].findAllAnime(), user[0], user[2], user[3])
+    # Remember we need a check for the length of the anime list to check if we should do our operation or not
+    # if there is only one anime then run the model checking else do not bother!
+
 
     return jsonify(anime)
 
