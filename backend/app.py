@@ -5,16 +5,17 @@ import os
 import hashlib
 import jwt
 import datetime
+from recommender.recommender import recommend
 
 app = Flask(__name__)
 app.config['secret_key'] = "s4fQuS10jQD4cGH8bKxHWXBOLp2PYRXOiiTGCuVqgAJmVElxId"
 
-users_db_path = os.path.join(os.getcwd(), 'backend/data/user_data/users.db') # This will have to be modified according to where it is run from
-app.config['users_db'] = Users(users_db_path)
+app.config['users_db_path'] = os.path.join(os.getcwd(), 'backend/data/user_data/users.db') # This will have to be modified according to where it is run from
+app.config['users_db'] = Users(app.config['users_db_path'])
 app.config['users_db'].createTable()
 
-anime_db_path = os.path.join(os.getcwd(), 'backend/data/scraped_data/anime.db') # This will have to be modified depending on where it is run from
-app.config['anime_db'] = Anime(anime_db_path)
+app.config['anime_db_path'] = os.path.join(os.getcwd(), 'backend/data/scraped_data/anime.db') # This will have to be modified depending on where it is run from
+app.config['anime_db'] = Anime(app.config['anime_db_path'])
 
 def validateToken(token):
     try:
@@ -89,6 +90,9 @@ def addShow():
     if anime_id in user[2]:
         return jsonify(success=False) 
     
+    if len(user[2]) > 499:
+        return jsonify(success=False) 
+
     user[2].append(anime_id)
     
     if anime_id not in user[3]:
@@ -128,9 +132,19 @@ def removeShow():
 
     return jsonify(success=True)
 
-@app.route('/recommend_shows', methods=['GET'], strict_slashes=False)
+@app.route('/recommend_shows', methods=['POST'], strict_slashes=False)
 def recommendShows():
-    # So first of all how am I going to train the model for this recommendation system?
+    token = request.form['token']
+    user = validateToken(token)
+
+    if not user:
+        return jsonify(success=False)
+
+    user = app.config['users_db'].findUser(user)
+    if not user:
+        return jsonify(success=False)
+
+    # We will want a seperate function to perform this
 
     # Content function
     # Collabortative function
@@ -146,7 +160,9 @@ def recommendShows():
 
     # Would it be better to use neural networks with collaborative filtering too, using siamese neural networks?
 
-    pass
+    df = recommend(app.config['anime_db_path'], user[0], user[2], user[3])
+
+    return jsonify(df.to_dict())
 
 if __name__ == '__main__':
     app.run(debug=True)
