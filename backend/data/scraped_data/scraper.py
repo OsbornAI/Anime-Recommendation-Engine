@@ -272,8 +272,6 @@ class Scraper:
                         'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers']
         df = df[kept_columns]
 
-        # I have to remove anything that has an add some from the filtering step
-
         df['anime_id'] = df['name_japanese'].astype(str) + '+' + df['name_english'].astype(str)
         df['anime_id'] = df['anime_id'].apply(lambda x: hashlib.md5(x.encode()).hexdigest())
 
@@ -292,7 +290,7 @@ class Scraper:
 
         df['score_percentage'] = df['score'] / 10
         df['std'] = (df['score_percentage'] * (-1 * df['score_percentage'] + 1) / df['scorers']) ** 0.5
-        df['weighted_score'] = df['score_percentage'] - 2 * df['std']
+        df['weighted_score'] = df['score_percentage'] - 2 * df['std'] / (df['scorers'] ** 0.5)
         df = df.drop(['score_percentage', 'std'], axis=1)
 
         rearranged_cols = ['anime_id', 'name_japanese', 'name_english', 'show_type', 'rating', 'licensors', 'producers', 
@@ -305,3 +303,13 @@ class Scraper:
         conn.close()
 
         return df
+
+if __name__ == '__main__':
+    csv_dir = os.path.join(os.getcwd(), 'csv')
+    sql_dir = os.path.join(os.getcwd(), 'anime.db')
+
+    data_scraper = Scraper(csv_dir)
+
+    df = data_scraper.compileSQL(sql_dir)
+    
+    print(df.head(3))
