@@ -266,13 +266,19 @@ class Scraper:
 
         df = pd.concat(dfs)
 
+        df = df.dropna(how='all')
+
         kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 
                         'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers']
         df = df[kept_columns]
 
-        # I am probably going to want to make a score column and a rating column as well for the show
+        # I have to remove anything that has an add some from the filtering step
+
         df['anime_id'] = df['name_japanese'].astype(str) + '+' + df['name_english'].astype(str)
         df['anime_id'] = df['anime_id'].apply(lambda x: hashlib.md5(x.encode()).hexdigest())
+
+        df = df.drop_duplicates(subset=['anime_id'])
+        df = df.reset_index()
 
         df['episode_length'] = df['episode_length'].apply(self.__parseEpLenCol)
         df['episode_length_bins'] = df['episode_length'].apply(self.__binEpLenCol)

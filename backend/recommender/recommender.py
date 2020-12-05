@@ -2,6 +2,7 @@ import pandas as pd
 import sqlite3
 from collections import Counter
 import numpy as np
+from model.model import Model
 
 def recommendationLevel(row, common_vector):
     recommend_level = 0
@@ -49,15 +50,15 @@ def recommendationLevel(row, common_vector):
 
 # This will also check to see the amount of good values available left and if it is too low then it will clear the blacklist from the shows it hasnt watched yet
 # Maybe I should block the ability to add too many shows aka limit it to be 500 shows
-def recommend(sql_dir, username, anime_list, blacklist):
+def recommendContent(sql_dir, username, anime_list, blacklist):
     conn = sqlite3.connect(sql_dir)
     df = pd.read_sql_query("SELECT * FROM anime", conn)
     conn.close()
 
-    # This section will create us our comparison vector
+    # This will create the common vector of our watched anime
     list_df = df[df['anime_id'].str.contains("|".join(anime_list[1:]))] # We use 1: here to not include the first item in the list which will be an empty character
     if len(anime_list[1:]) == 0:
-        list_df = list_df.iloc[:500, :]
+        list_df = list_df.sample(n=10)
 
     ep_len_bins = []
     ep_count_bins = []
@@ -100,11 +101,26 @@ def recommend(sql_dir, username, anime_list, blacklist):
 
     common_vector = [ep_len_common, ep_count_common, rating_common, show_type_common, weighted_score_average, genres_common]
 
+    # This will rank our anime based on the most common traits of the shows in the list
+    sample_df = df.sample(n=500)
     recommendation_levels = []
-    for _, row in df.iterrows():
+    for _, row in sample_df.iterrows():
         recommendation_level = recommendationLevel(row, common_vector)
         recommendation_levels.append(recommendation_level)
-    df['recommendation_level'] = recommendation_levels
-    df = df.sort_values(by='recommendation_level')
+    sample_df['recommendation_level'] = recommendation_levels
+    sample_df = sample_df.sort_values(by='recommendation_level', ascending=False)
 
-    return df.head()
+    # This will be the network classification system of the recommender
+    #   - This will need a seperate condition
+    if len(anime_list[1:]) == 0:
+        return sample_df['anime_id'].to_list()
+
+    else:
+
+        # So what data are we going to be feeding in here from our 'sample_df'?
+
+        # Here is where we will run the network and perform our sample updates which have to be done at at a time and then incooperated???
+        pass
+
+
+    return sample_df['anime_id'].to_list()

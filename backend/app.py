@@ -5,7 +5,7 @@ import os
 import hashlib
 import jwt
 import datetime
-from recommender.recommender import recommend
+from recommender.recommender import recommendContent
 
 app = Flask(__name__)
 app.config['secret_key'] = "s4fQuS10jQD4cGH8bKxHWXBOLp2PYRXOiiTGCuVqgAJmVElxId"
@@ -41,7 +41,7 @@ def register():
     if not success:
         return jsonify(success=False) 
 
-    token = jwt.encode({'username': username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['secret_key'])
+    token = jwt.encode({'username': username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=120)}, app.config['secret_key'])
 
     return jsonify(success=True, token=token) # Probably send some session information too
 
@@ -56,7 +56,7 @@ def login():
 
     password = hashlib.sha512(password_raw.encode()).hexdigest()
     if password == users[1]:
-        token = jwt.encode({'username': username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['secret_key'])
+        token = jwt.encode({'username': username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=120)}, app.config['secret_key'])
 
         return jsonify(success=True, token=token.decode('utf-8'))
 
@@ -132,8 +132,8 @@ def removeShow():
 
     return jsonify(success=True)
 
-@app.route('/recommend_shows', methods=['POST'], strict_slashes=False)
-def recommendShows():
+@app.route('/recommend_anime', methods=['POST'], strict_slashes=False)
+def recommendAnime():
     token = request.form['token']
     user = validateToken(token)
 
@@ -157,12 +157,14 @@ def recommendShows():
     #       - We will also have some sort of randomness to our network to recommend completely low rated shows to help the algorithm
     #       
     #       Model will store data in an external file and then once it gets enough data it will go through and update the network
+    # 
+    #  - If we run out of content then we will clear the items not in our list from our blacklist
 
     # Would it be better to use neural networks with collaborative filtering too, using siamese neural networks?
 
-    df = recommend(app.config['anime_db_path'], user[0], user[2], user[3])
+    anime = recommendContent(app.config['anime_db_path'], user[0], user[2], user[3])
 
-    return jsonify(df.to_dict())
+    return jsonify(anime)
 
 if __name__ == '__main__':
     app.run(debug=True)
