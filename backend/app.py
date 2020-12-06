@@ -5,7 +5,7 @@ import os
 import hashlib
 import jwt
 import datetime
-from recommender.recommender import recommendContent
+from recommender.recommender import recommendContent # This might get replaced eventually
 from recommender.model.model import Model
 
 app = Flask(__name__)
@@ -165,10 +165,12 @@ def recommendAnime():
 
     # Would it be better to use neural networks with collaborative filtering too, using siamese neural networks?
 
+    # This could end up getting replaced
     anime = recommendContent(app.config['anime_db'].findAllAnime(), user[0], user[2], user[3])
     # Remember we need a check for the length of the anime list to check if we should do our operation or not
     # if there is only one anime then run the model checking else do not bother!
 
+    # Now lets combine some parts from the recommender algorithm into our other algorithm
 
     return jsonify(anime)
 

@@ -174,7 +174,7 @@ class Scraper:
                 return 60 * int(ep_len_split[0])
 
         except:
-            return pd.NaT
+            return pd.NA
 
     def __binEpLenCol(self, ep_length):
         try:
@@ -198,14 +198,14 @@ class Scraper:
                 return '>120'
 
         except:
-            return pd.NaT
+            return pd.NA
 
     def __parseEpisodesCol(self, episodes):
         try:
             return int(episodes)
         
         except:
-            return pd.NaT
+            return pd.NA
 
     def __binEpCountCol(self, count):
         try:
@@ -238,7 +238,7 @@ class Scraper:
                 return '>210'
 
         except:
-            return pd.NaT
+            return pd.NA
 
     def __scoreColParse(self, score_and_scorers):
         try:
@@ -247,7 +247,7 @@ class Scraper:
             return score
 
         except:
-            return pd.NaT
+            return pd.NA
 
     def __scorersColParse(self, score_and_scorers):
         try:
@@ -256,7 +256,7 @@ class Scraper:
             return scorers
 
         except:
-            return pd.NaT
+            return pd.NA
 
     # This is going to want to be updated at some point in time - how are we going to do this update?
     def compileSQL(self, sql_dir):
@@ -268,8 +268,8 @@ class Scraper:
 
         df = df.dropna(how='all')
 
-        kept_columns = ['name_english', 'name_japanese', 'show_type', 'episodes', 'producers', 
-                        'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers']
+        kept_columns = ['name_english', 'name_japanese', 'show_type', 'source', 'episodes', 'producers', 
+                        'licensors', 'studios', 'genres', 'episode_length', 'rating', 'description', 'score_and_scorers'] # Maybe I should go and add source in there too
         df = df[kept_columns]
 
         df['anime_id'] = df['name_japanese'].astype(str) + '+' + df['name_english'].astype(str)
@@ -290,10 +290,10 @@ class Scraper:
 
         df['score_percentage'] = df['score'] / 10
         df['std'] = (df['score_percentage'] * (-1 * df['score_percentage'] + 1) / df['scorers']) ** 0.5
-        df['weighted_score'] = df['score_percentage'] - 2 * df['std'] / (df['scorers'] ** 0.5)
+        df['weighted_score'] = df['score_percentage'] - 2 * df['std']
         df = df.drop(['score_percentage', 'std'], axis=1)
 
-        rearranged_cols = ['anime_id', 'name_japanese', 'name_english', 'show_type', 'rating', 'licensors', 'producers', 
+        rearranged_cols = ['anime_id', 'name_japanese', 'name_english', 'show_type', 'source', 'rating', 'licensors', 'producers', 
                            'studios', 'genres', 'episodes', 'episodes_bins', 'episode_length', 'episode_length_bins', 
                            'score', 'scorers', 'weighted_score', 'description']
         df = df[rearranged_cols]
@@ -305,8 +305,8 @@ class Scraper:
         return df
 
 if __name__ == '__main__':
-    csv_dir = os.path.join(os.getcwd(), 'csv')
-    sql_dir = os.path.join(os.getcwd(), 'anime.db')
+    csv_dir = os.path.join(os.getcwd(), 'backend/data/scraped_data/csv')
+    sql_dir = os.path.join(os.getcwd(), 'backend/data/scraped_data/anime.db')
 
     data_scraper = Scraper(csv_dir)
 

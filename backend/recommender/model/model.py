@@ -1,5 +1,6 @@
 from collections import Counter
 import string
+import tensorflow as tf
 
 # What is our model going to contain?
 # What architecture should we use?
@@ -19,7 +20,7 @@ import string
 class Model:
     def __init__(self, anime_df):
         # We need to go through and make a word list here
-        phrase_list = []
+        phrase_list = ['<s>']
 
         # Consider the names, the studios, the licensors, the producers, the genres and the descriptions of each show, concatenate them together
         anime_df['name_english'].apply(lambda x: self.__appendList(x, phrase_list))
@@ -30,10 +31,8 @@ class Model:
         anime_df['genres'].apply(lambda x: self.__appendList(x, phrase_list))
         anime_df['description'].apply(lambda x: self.__appendList(x, phrase_list))
 
-        phrases = " ".join(phrase_list).split(' ')
+        phrases = " ".join(phrase_list).split(' ') # <s> will be the character we use to split our sentences in our comparisons
         self.__words = {phrase[0]: i + 1 for i, phrase in enumerate(Counter(phrases).most_common())} # We will set our words to begin at one so we have the option of padding with zeros if we want
-
-        print(len(self.__words))
 
     def __cleanPhrase(self, phrase):
         phrase = phrase.strip()
@@ -54,7 +53,8 @@ class Model:
             pass
 
     def processPhrase(self, phrase):
-        phrase = self.__cleanPhrase(phrase)
+        phrase = phrase.split('<s>')
+        phrase = ' <s> '.join([self.__cleanPhrase(segment) for segment in phrase])
         word_keys = self.__words.keys()
         encoded_phrase = [self.__words[word] if word in word_keys else 0 for word in phrase.split(' ')]
 
